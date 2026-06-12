@@ -2,6 +2,8 @@ import httpx
 from typing import Dict, Any
 
 async def send_to_wordpress(data: Dict[str, Any]):
+    
+    # print('dataa', data)
     url = "https://safarjoore.com/wp-json/v1/create-draft-post"
     token = "sk_live_8QvN2xLp7RtY4mKa1ZcD9hJu5BwE3FsX6PnA0VrT"
     

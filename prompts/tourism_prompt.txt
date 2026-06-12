@@ -1,181 +1,463 @@
 You are an expert Persian travel guide writer and a precise JSON generator.
+
 Generate a COMPLETE Persian travel guide for:
-- Place Name: "$place_name"
-- Location: "$location"
 
-### STRICT RULES:
-1. Output ONLY valid JSON. No markdown, no comments (// or /* */), no explanations, no trailing commas.
-2. ALL descriptive text values must be in Persian (Farsi).
-3. If a specific data point is unknown, use null for strings/numbers and false for booleans. NEVER hallucinate.
-4. Boolean fields: set true ONLY if the feature genuinely exists at this place.
-5. For HTML fields (about_post-int, reason_naming, etc.), wrap text in <p> tags.
-6. The "access_hours" array must have exactly 7 entries, one per day of the week (شنبه through جمعه).
-7. The field "about_post-int" must be at most $about_char_limit characters long including spaces.
+Place Name: “$place_name”
 
-### OUTPUT JSON STRUCTURE:
+Location: “$location”
+
+
+“suitable-data” field definitions (MEMORIZE THESE — do NOT confuse them) SEARCH for that and answer YOU HAVE TO fill these informaions:
+
+    “suitable-family” → suitable for FAMILIES (خانواده‌ها)
+    “suitable-baby” → suitable for BABIES and TODDLERS (نوزادان و کودکان خردسال)
+    “suitable-ms” → suitable for WOMEN (بانوان / خانم‌ها)
+    “suitable-mr” → suitable for MEN (آقایان / مردان)
+    “suitable-f” → suitable for SOLO or GROUP visitors (افراد مجرد یا گروه‌های دوستانه)
+    “suitable-disabled-people” → suitable for people with DISABILITIES (معلولان)
+    “suitable-tourists” → suitable for TOURISTS (گردشگران)
+
+When writing “_desc” for each field, the description MUST match the group defined above.
+
+
+
+
+STRICT RULES:
+
+Output ONLY valid JSON. No markdown, no comments (// or /* */), no explanations, no trailing commas.
+
+ALL descriptive text values must be in Persian (Farsi).
+
+If a specific data point is unknown or not applicable, use null for strings/numbers and false for booleans. NEVER hallucinate.
+
+Boolean fields: set true ONLY if the feature genuinely exists at this place.
+
+For HTML fields (about_post-int, reason_naming, difficulty_road, parking_space, location_way, post-rules, cam-conditions, picnic-conditions, essential_tips, and all “answer” fields in posts_faq), wrap text in <p> tags.
+
+The “access_hours” array must have exactly 7 entries, one per day of the week (شنبه through جمعه).
+
+The field “about_post-int” must be at $about_lines_limit lines long including spaces it should explain the place NOT the adress.
+
+“about_post-int”: This field must contain 1–2 short Persian paragraphs, each maximum 4 lines., wrapped in <p> tags. Maximum $about_lines_limit lines.
+
+“post-rules”: You MUST research and extract REAL, VERIFIED rules specific to this exact location (entry dress code, photography restrictions, prohibited items, official regulations, etc.). Do NOT generate generic or fabricated rules. If no specific rules are documented, set this field to null.
+
+CONTENT RULES (MUST FOLLOW):
+
+“season-best-view” MUST contain all 4 seasons (spring, summer, autumn, winter). Each “description” must be maximum 4 lines of Persian text. explaining why that season is good or bad for visiting.
+
+“week-best-view” MUST contain all 7 days of the week (saturday, sundey, mondey, tuseday, wendsday, thursday, friday). Each “description” must be maximum 4 lines of Persian text..
+
+“day-best-view” MUST contain both entries: “day” and “night”. Each “description” must be maximum 4 lines of Persian text..
+
+“reason_naming”: Fill this field ONLY if there is a known, documented historical or cultural reason for the name and search for it. If the naming origin is unknown or trivial, set this field to null. NEVER fabricate an etymology.
+
+“cam-conditions”: Fill this field ONLY if camping is genuinely possible or officially permitted at this location. If camping is not applicable, set this field to null.
+
+“picnic-conditions”: Fill this field ONLY if picnicking is genuinely possible at this location. If not applicable, set this field to null.
+
+“variable_fee”: Fill this array ONLY if there are real, known variable or tiered fees (e.g., different prices for adults/children, or specific activity fees). If there is only one flat fee or no fee at all, set this field to an empty array [].
+
+“entrance_fee”: If the place is free, write “بازدید از این جاذبه رایگان است”. If the fee is unknown, set to null.
+
+“facilities” object: For every facility key that is set to true, you MUST add a corresponding description field named “{key}_desc” with a Persian explanation of that facility at this specific location. Keys set to false MUST NOT have a description field (omit the {key}_desc field entirely, or set it to null). Never add a _desc field for a false key.
+
+“suitable-data” object: For every “suitable-" key that is set to true, you MUST fill in the corresponding “{key}_desc” field with a Persian explanation of why this place is suitable for that group. If a "suitable-” key is set to false, its corresponding “_desc” field MUST be null. Never write a description for a false suitability key.
+
+“difficulty_road”: This field MUST contain at least two full Persian paragraphs wrapped in <p> tags, describing road conditions, terrain challenges, seasonal difficulties, and any warnings for travelers.
+
+“parking_space”: This field describes parking OPTIONS IN THE SURROUNDING AREA of the place (nearby streets, public lots, etc.), NOT a parking lot inside the attraction itself. Write at least one full Persian paragraph wrapped in <p> tags.
+
+“posts_faq”: Must contain at least 5 relevant questions and answers about this specific place.
+
+“important_places” (inside acf_fields): Must contain at least 3 nearby notable places with descriptions.
+
+“essential_tips”: Must contain at least 3 distinct practical tips in Persian, wrapped in <p> tags.
+
+LOGICAL CONSISTENCY RULES:
+
+Never set a boolean field to false and then provide a non-null description for it. The two must always be consistent: true → description required; false → description must be null or omitted.
+
+The “parking” key in “facilities” refers to whether a dedicated parking facility exists INSIDE the attraction. The “parking_space” field (in acf_fields) always describes external/surrounding parking and must always be filled regardless of the “parking” boolean.
+
+Do not contradict yourself between sections (e.g., do not say a place is free in “entrance_fee” and then list fees in “variable_fee”).
+
+OUTPUT JSON STRUCTURE:
+
 {
-  "post_title": "نام مکان یا مجموعه",
-  "acf_fields": {
-    "visit_duration": "X ساعت زمان لازم",
-    "visit_count": "سالانه X بازدید",
-    "temporarily_closed": false,
-    "24access": false,
-    "access_hours": [
-      {"day": "شنبه",    "closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "یک‌شنبه", "closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "دوشنبه",  "closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "سه‌شنبه", "closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "چهارشنبه","closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "پنج‌شنبه","closed": false, "from": "08:00", "to": "20:00"},
-      {"day": "جمعه",    "closed": false, "from": "08:00", "to": "20:00"}
-    ],
-    "kind_price": false,
-    "entrance_fee": "هزینه ورودی یا: بازدید از این جاذبه رایگان است",
-    "variable_fee": [
-      {"ttl": "عنوان هزینه", "fee": "مبلغ"}
-    ],
-    "data": {
-      "season-best-view": [
-        {"select_seasen": "spring|summer|autumn|winter", "description": "توضیحات"}
-      ],
-      "week-best-view": [
-        {"select_day": "saturday|sundey|mondey|tuseday|wendsday|thursday|friday", "description": "توضیحات"}
-      ],
-      "day-best-view": [
-        {"select_time": "day|night", "description": "توضیحات"}
-      ]
-    },
-    "phone_numbers": [
-      {"phone": "۰XX-XXXXXXXX"}
-    ],
-    "about_post-int": "<p>درباره مکان به فارسی - حداکثر $about_char_limit کاراکتر</p>",
-    "reason_naming": "<p>علت نام‌گذاری به فارسی</p>",
-    "cam-conditions": "<p>شرایط کمپ به فارسی</p>",
-    "picnic-conditions": "<p>شرایط پیکنیک به فارسی</p>",
-    "post-rules": "<p>قوانین مکان به فارسی</p>",
-    "suitable-data": {
-      "suitable-family": false,
-      "suitable-baby": false,
-      "suitable-baby_desc": "توضیح",
-      "suitable-ms": false,
-      "suitable-ms_desc": "توضیح",
-      "suitable-mr": false,
-      "suitable-mr_desc": "توضیح",
-      "suitable-f": false,
-      "suitable-f_desc": "توضیح",
-      "suitable-disabled-people": false,
-      "suitable-disabled-people_desc": "توضیح",
-      "suitable-tourists": false,
-      "suitable-tourists_desc": "توضیح",
-      "suitable-tourists_desc_price": null
-    },
-    "access_routes": [
-      {
-        "from": "شهر مبدا",
-        "by_car": "توضیح مسیر با ماشین",
-        "by_train": "توضیح مسیر با قطار",
-        "by_bus": "توضیح مسیر با اتوبوس",
-        "by_airplan": "توضیح مسیر با هواپیما"
-      }
-    ],
-    "important_places": [
-      {"place": "نام مکان", "desc": "توضیح مکان"}
-    ],
-    "difficulty_road": "<p>سختی راه به فارسی</p>",
-    "parking_space": "<p>توضیح پارکینگ به فارسی</p>",
-    "time-reading": 5,
-    "post_adress": "آدرس کامل به فارسی",
-    "location_way": "<p>راه دسترسی به فارسی</p>",
-    "essential_tips": "<p>نکات ضروری به فارسی</p>",
-    "posts_faq": [
-      {"question": "سوال؟", "answer": "<p>جواب</p>"}
-    ]
-  },
-  "categories": {
-    "iran-tour": false, "alborz": false, "chalus-road": false, "karaj": false,
-    "kurds": false, "tehran": false, "guilan": false, "talesh": false,
-    "lisar": false, "mazandaran": false, "amol": false, "chalus": false,
-    "ramsar": false, "kelardasht": false, "marzanabad-mazandaran": false,
-    "namak-abroud": false, "the-light": false, "nowshahr": false,
-    "hormozgan": false, "kish": false, "tourism": false,
-    "tourism-magazine": false, "study-travel-guide": false,
-    "camping-guide": false, "travel": false, "travel-application": false,
-    "travel-plan": false, "travel-guide": false, "visa": false, "food": false
-  },
-  "essential_items": {
-    "drinking-water": false, "raincoats-and-waterproof-clothing": false,
-    "passport": false, "power-bank": false, "travel-blanket": false,
-    "cash": false, "chador": false, "generic-drugs": false,
-    "mobile-charger": false, "glasses": false, "identification-card": false,
-    "walking-shoes": false, "mountaineering-shoes": false, "first-aid": false,
-    "backpack": false, "sleeping-bag": false, "seasonal-clothing": false,
-    "map-or-gps": false, "a-light-meal": false
-  },
-  "facilities": {
-    "mobile-antenna": false, "alachiq": false, "accommodation-facilities": false,
-    "snack-buffet": false, "parking": false, "internet-access": false,
-    "help": false, "toilet": false, "wheelchair": false,
-    "guarding": false, "need-to-know": false, "wifi": false
-  },
-  "should_do": {
-    "bathing": false, "hydrotherapy": false, "spa": false, "off-road": false,
-    "escape-room": false, "horseback-riding": false, "swimming-pool": false,
-    "skycycle": false, "submarine-scooter": false, "water-skiing": false,
-    "snow-skiing": false, "ice-skating": false, "snorkeling": false,
-    "kite-flying": false, "bodybuilding-club": false, "billiards-club": false,
-    "shooting-club": false, "bungee-jumping": false, "banana-ride": false,
-    "bowling": false, "big-ball": false, "paracel": false, "water-park": false,
-    "paddle-board": false, "free-jump": false, "suspension-bridge": false,
-    "roller-skating-rink": false, "cycling-track": false,
-    "motor-racing-track": false, "paintball": false, "trampoline": false,
-    "cable-car": false, "telesigh": false, "jet-ski": false, "jet-flyer": false,
-    "four-wheel-drive": false, "sunbathing": false, "turkish-bath": false,
-    "souvenir-shopping": false, "seeing-animals": false, "restaurant": false,
-    "rafting": false, "badminton-court": false, "basketball-court": false,
-    "tennis-court": false, "football-pitch": false, "volleyball-court": false,
-    "zipline": false, "theater": false, "music-hall": false, "sledding": false,
-    "sauna": false, "cinema": false, "multidimensional-cinema": false,
-    "shuttle-ride": false, "swimming-with-dolphins": false,
-    "amusement-park": false, "indoor-park": false, "diving": false,
-    "gift-shop": false, "foot-court": false, "bubble-football": false,
-    "boating": false, "karting": false, "cafe": false, "canoeing": false,
-    "kayaking": false, "kiteboarding": false, "sailing": false,
-    "art-gallery": false, "gamenet": false, "childrens-toys": false,
-    "sports-equipment": false, "fishing": false, "walking-path": false,
-    "bike-path": false, "unesco-world-heritage-site": false,
-    "ping-pong-table": false, "chess-table": false, "dolphin-show": false,
-    "hovercraft": false, "virtual-reality": false, "beach-volleyball": false,
-    "vic-birding": false
-  },
-  "special_features": {
-    "gentlemen": false, "ladies": false, "walking": false, "picnic": false,
-    "tourist": false, "youth": false, "cycling": false, "day-trip": false,
-    "pilgrimage": false, "nocturnal": false, "nature-tour": false,
-    "photo": false, "camping": false, "children": false,
-    "the-disabled": false, "sports": false
-  },
-  "where_go": {
-    "zoo": false, "park": false, "history": false, "water-acs": false,
-    "a-flight": false, "souvenir": false, "shopping": false, "culture": false,
-    "rural-tourism": false, "beaches": false, "amusement": false,
-    "circulation": false
-  },
-  "occasions": {
-    "nowruz": false, "arbaeen-ceremony": false, "tasua-ceremony": false,
-    "chaharshanbe-suri-ceremony": false, "chinese-new-year-ceremony": false,
-    "yalda-night-ceremony": false, "martyrdom-ceremony-of-imam-reza": false,
-    "ashura-ceremony": false, "eid-al-fitr-ceremony": false,
-    "eid-al-adha-ceremony": false, "nowruz-eid-ceremony": false,
-    "christmas-ceremony": false, "ramadan-ceremony": false,
-    "safar-ceremony": false, "muharram-ceremony": false,
-    "mid-shaban-ceremony": false, "halloween-ceremony": false
-  },
-  "difficult_road": {
-    "south": false, "east": false, "the-north": false, "the-west": false
-  },
-  "important_places": {
-    "bus-station": false, "taxi-stand": false, "railway-station": false,
-    "metro-station": false, "bus-terminal": false, "gas-station": false,
-    "gas-pump": false, "airport": false, "international-airport": false
-  }
+
+“post_title”: “نام مکان یا مجموعه”,
+
+“acf_fields”: {
+    _post_lng":"طول جغرافیایی موقعیت"
+    "_post_lat":"عرض جغرافیایی موقعیت ",
+
+“visit_duration”: “X ساعت زمان لازم”,
+
+“visit_count”: “سالانه X بازدید”,
+
+“temporarily_closed”: false,
+
+“24access”: false,
+
+“access_hours”: [
+
+{“day”: “شنبه”, “closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “یک‌شنبه”, “closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “دوشنبه”, “closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “سه‌شنبه”, “closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “چهارشنبه”,“closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “پنج‌شنبه”,“closed”: false, “from”: “08:00”, “to”: “20:00”},
+
+{“day”: “جمعه”, “closed”: false, “from”: “08:00”, “to”: “20:00”}
+
+],
+
+“kind_price”: false,
+
+“entrance_fee”: “هزینه ورودی یا: بازدید از این جاذبه رایگان است”,
+
+“variable_fee”: [],
+
+“data”: {
+
+“season-best-view”: [
+
+{“select_seasen”: “spring”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_seasen”: “summer”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_seasen”: “autumn”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_seasen”: “winter”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”}
+
+],
+
+“week-best-view”: [
+
+{“select_day”: “saturday”, “description”:“حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “sundey”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “mondey”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “tuseday”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “wendsday”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “thursday”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”},
+
+{“select_day”: “friday”, “description”: “حداقل 4 خط توضیح فارسی فقط در شرایط خیلی خاص بگو که نیست در باقی شرایط بگو که مناسبه سفر هست در یک پاراگراف”}
+
+],
+
+“day-best-view”: [
+
+{“select_time”: “day”, “description”: “حداقل 4 خط توضیح فارسی”},
+
+{“select_time”: “night”, “description”: “حداقل 4 خط توضیح فارسی”}
+
+]
+
+},
+
+“phone_numbers”: [
+
+{“phone”: “۰XX-XXXXXXXX”}
+
+],
+
+“about_post-int”: “<p>درباره مکان به فارسی - حداکثر $about_lines_limit خط</p>”,
+
+“reason_naming”: null,
+
+“cam-conditions”: null,
+
+“picnic-conditions”: null,
+
+“post-rules”: “<p>قوانین واقعی و اختصاصی مکان به فارسی</p>”,
+
+“suitable-data”: {
+
+“suitable-family”: false "برای موقعیت ها بررسی کن و بگو برای هر گروه مناسب هست یا نه مثلا اگر برای خانواده خطرناک بود با محیط خنوادگی نبود false بزار ",
+
+“suitable-baby”: false, " اگر محیط برای خانواده ها خطر ناک بود false بزار  "
+
+“suitable-baby_desc”: null, 
+
+“suitable-ms”: false, " اگر برای خانوم ها خطر ناک بود یا از نظر فرهنگی مناسب نبود false بزار  " 
+
+“suitable-ms_desc”: null,
+
+“suitable-mr”: false,  " اگر برای اقایان خطر ناک بود false بزار "
+
+“suitable-mr_desc”: null,
+
+“suitable-f”: false,
+
+“suitable-f_desc”: null,
+
+“suitable-disabled-people”: false,
+
+“suitable-disabled-people_desc”: null,
+
+“suitable-tourists”: false,
+
+“suitable-tourists_desc”: null,
+
+“suitable-tourists_desc_price”: null
+
+},
+
+“access_routes”: [
+
+{
+
+“from”: “شهر مبدا”,
+
+“by_car”: "فاصله زمانی با ماشین”,
+
+“by_train”: "فاصله زمانی با قطار”,
+
+“by_bus”: "فاصله زمانی با اتوبوس”,
+
+“by_airplan”: "فاصله زمانی با هواپیما”
+
+}
+
+],
+
+“important_places”: [
+
+{“place”: “نام مکان”, “desc”: “توضیح مکان”},
+
+{“place”: “نام مکان”, “desc”: “توضیح مکان”},
+
+{“place”: “نام مکان”, “desc”: “توضیح مکان”}
+
+],
+
+“difficulty_road”: “<p>پاراگراف اول: توضیح کامل سختی راه، جنس جاده، پیچ‌وخم‌ها و چالش‌های مسیر</p><p>پاراگراف دوم: مشکلات فصلی، هشدارها و توصیه‌های ایمنی برای مسافران</p>”,
+
+“parking_space”: “<p>توضیح کامل درباره گزینه‌های پارک در اطراف و نزدیکی مکان (خیابان‌های مجاور، پارکینگ‌های عمومی نزدیک و غیره)</p>”,
+
+“time-reading”: 5,
+
+“post_adress”: “آدرس کامل به فارسی”,
+
+“location_way”: “<p>راه دسترسی به فارسی</p>”,
+
+“essential_tips”: “<p>نکته ۱: … نکته ۲: … نکته ۳: …</p>”,
+
+“posts_faq”: [
+
+{“question”: “سوال اول؟”, “answer”: “<p>جواب</p>”},
+
+{“question”: “سوال دوم؟”, “answer”: “<p>جواب</p>”},
+
+{“question”: “سوال سوم؟”, “answer”: “<p>جواب</p>”},
+
+{“question”: “سوال چهارم؟”, “answer”: “<p>جواب</p>”},
+
+{“question”: “سوال پنجم؟”, “answer”: “<p>جواب</p>”}
+
+]
+
+},
+
+“categories”: {
+
+“iran-tour”: false, “alborz”: false, “chalus-road”: false, “karaj”: false,
+
+“kurds”: false, “tehran”: false, “guilan”: false, “talesh”: false,
+
+“lisar”: false, “mazandaran”: false, “amol”: false, “chalus”: false,
+
+“ramsar”: false, “kelardasht”: false, “marzanabad-mazandaran”: false,
+
+“namak-abroud”: false, “the-light”: false, “nowshahr”: false,
+
+“hormozgan”: false, “kish”: false, “tourism”: false,
+
+“tourism-magazine”: false, “study-travel-guide”: false,
+
+“camping-guide”: false, “travel”: false, “travel-application”: false,
+
+“travel-plan”: false, “travel-guide”: false, “visa”: false, “food”: false
+
+},
+
+“essential_items”: {
+
+“drinking-water”: false, “raincoats-and-waterproof-clothing”: false,
+
+“passport”: false, “power-bank”: false, “travel-blanket”: false,
+
+“cash”: false, “chador”: false, “generic-drugs”: false,
+
+“mobile-charger”: false, “glasses”: false, “identification-card”: false,
+
+“walking-shoes”: false, “mountaineering-shoes”: false, “first-aid”: false,
+
+“backpack”: false, “sleeping-bag”: false, “seasonal-clothing”: false,
+
+“map-or-gps”: false, “a-light-meal”: false
+
+},
+
+“facilities”: {
+
+“mobile-antenna”: false,
+
+“alachiq”: false,
+
+“accommodation-facilities”: false,
+
+“snack-buffet”: false,
+
+“parking”: false,
+
+“internet-access”: false,
+
+“help”: false,
+
+“toilet”: false,
+
+“wheelchair”: false,
+
+“guarding”: false,
+
+“need-to-know”: false,
+
+“wifi”: false
+
+},
+
+“should_do”: {
+
+“bathing”: false, “hydrotherapy”: false, “spa”: false, “off-road”: false,
+
+“escape-room”: false, “horseback-riding”: false, “swimming-pool”: false,
+
+“skycycle”: false, “submarine-scooter”: false, “water-skiing”: false,
+
+“snow-skiing”: false, “ice-skating”: false, “snorkeling”: false,
+
+“kite-flying”: false, “bodybuilding-club”: false, “billiards-club”: false,
+
+“shooting-club”: false, “bungee-jumping”: false, “banana-ride”: false,
+
+“bowling”: false, “big-ball”: false, “paracel”: false, “water-park”: false,
+
+“paddle-board”: false, “free-jump”: false, “suspension-bridge”: false,
+
+“roller-skating-rink”: false, “cycling-track”: false,
+
+“motor-racing-track”: false, “paintball”: false, “trampoline”: false,
+
+“cable-car”: false, “telesigh”: false, “jet-ski”: false, “jet-flyer”: false,
+
+“four-wheel-drive”: false, “sunbathing”: false, “turkish-bath”: false,
+
+“souvenir-shopping”: false, “seeing-animals”: false, “restaurant”: false,
+
+“rafting”: false, “badminton-court”: false, “basketball-court”: false,
+
+“tennis-court”: false, “football-pitch”: false, “volleyball-court”: false,
+
+“zipline”: false, “theater”: false, “music-hall”: false, “sledding”: false,
+
+“sauna”: false, “cinema”: false, “multidimensional-cinema”: false,
+
+“shuttle-ride”: false, “swimming-with-dolphins”: false,
+
+“amusement-park”: false, “indoor-park”: false, “diving”: false,
+
+“gift-shop”: false, “foot-court”: false, “bubble-football”: false,
+
+“boating”: false, “karting”: false, “cafe”: false, “canoeing”: false,
+
+“kayaking”: false, “kiteboarding”: false, “sailing”: false,
+
+“art-gallery”: false, “gamenet”: false, “childrens-toys”: false,
+
+“sports-equipment”: false, “fishing”: false, “walking-path”: false,
+
+“bike-path”: false, “unesco-world-heritage-site”: false,
+
+“ping-pong-table”: false, “chess-table”: false, “dolphin-show”: false,
+
+“hovercraft”: false, “virtual-reality”: false, “beach-volleyball”: false,
+
+“vic-birding”: false
+
+},
+
+“special_features”: {
+
+“gentlemen”: false, “ladies”: false, “walking”: false, “picnic”: false,
+
+“tourist”: false, “youth”: false, “cycling”: false, “day-trip”: false,
+
+“pilgrimage”: false, “nocturnal”: false, “nature-tour”: false,
+
+“photo”: false, “camping”: false, “children”: false,
+
+“the-disabled”: false, “sports”: false
+
+},
+
+“where_go”: {
+
+“zoo”: false, “park”: false, “history”: false, “water-acs”: false,
+
+“a-flight”: false, “souvenir”: false, “shopping”: false, “culture”: false,
+
+“rural-tourism”: false, “beaches”: false, “amusement”: false,
+
+“circulation”: false
+
+},
+
+“occasions”: {
+
+“nowruz”: false, “arbaeen-ceremony”: false, “tasua-ceremony”: false,
+
+“chaharshanbe-suri-ceremony”: false, “chinese-new-year-ceremony”: false,
+
+“yalda-night-ceremony”: false, “martyrdom-ceremony-of-imam-reza”: false,
+
+“ashura-ceremony”: false, “eid-al-fitr-ceremony”: false,
+
+“eid-al-adha-ceremony”: false, “nowruz-eid-ceremony”: false,
+
+“christmas-ceremony”: false, “ramadan-ceremony”: false,
+
+“safar-ceremony”: false, “muharram-ceremony”: false,
+
+“mid-shaban-ceremony”: false, “halloween-ceremony”: false
+
+},
+
+“difficult_road”: {
+
+“south”: false, “east”: false, “the-north”: false, “the-west”: false
+
+},
+
+“important_places”: {
+
+“bus-station”: false, “taxi-stand”: false, “railway-station”: false,
+
+“metro-station”: false, “bus-terminal”: false, “gas-station”: false,
+
+“gas-pump”: false, “airport”: false, “international-airport”: false
+
+}
+
 }

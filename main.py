@@ -1,32 +1,59 @@
-from fastapi import FastAPI, HTTPException, status
-from schemas import TourismRequest, TourismRequest
+import os
+import asyncio
+from flask import Flask, request, jsonify
+from flask_cors import cross_origin
 from services.openai_service import generate_tourism_guide
 from services.wordpress_service import send_to_wordpress
 
-app = FastAPI(title="GapGPT Tourism API", description="سرویس هوشمند تولید محتوای گردشگری")
+app = Flask(__name__)
 
-@app.post("/generate-guide")
-async def generate_guide(request: TourismRequest):
-    # ۱. تولید اولیه با گروک
-    grok_response = await generate_tourism_guide(
-        request.place_name, request.location, request.about_char_limit
+API_TOKEN = os.getenv("API_TOKEN", "GAPGPT_SECRET_TOKEN_2026_ALI")
+
+def check_auth(req):
+    auth_header = req.headers.get("Authorization")
+    print("auth header", auth_header)
+    return auth_header == f"Bearer {API_TOKEN}"
+
+@app.route("/generate-guide", methods=["POST", "OPTIONS"])
+@cross_origin(origin="*", headers=["Content-Type", "Authorization"])
+def generate_guide():
+
+    if not check_auth(request):
+        return jsonify({
+            "status": "error",
+            "message": "Unauthorized"
+        }), 401
+
+    # try:
+    data = request.get_json()
+
+    place_name = data.get("place_name")
+    location = data.get("location")
+    about_lines_limit = data.get("about_char_limit", 500)
+    extra_fields = data.get("extra_fields", {})
+
+    grok_response = asyncio.run(
+        generate_tourism_guide(place_name, location, about_lines_limit)
     )
-    
-    # ۲. ادغام (Merge) داده‌های سفارشی کلاینت
-    if request.extra_fields:
-        # نکته: اگر فیلدها تودرتو (Nested) هستند، باید از deep_merge استفاده کنی
-        # اینجا یک ادغام ساده در سطح اول انجام دادیم
-        grok_response.update(request.extra_fields)
-    
-    # ۳. ارسال به وردپرس
-    try:
-        wp_result = await send_to_wordpress(grok_response)
-        return {"status": "success", "wp_response": wp_result}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+
+    if extra_fields:
+        grok_response.update(extra_fields)
+
+    wp_result = asyncio.run(
+        send_to_wordpress(grok_response)
+    )
+
+    return jsonify({
+        "status": "success",
+        "wp_response": wp_result
+    })
+
+    # except Exception as e:
+    #     return jsonify({
+    #         "status": "error",
+    #         "message": str(e)
+    #     }), 500
 
 
 if __name__ == "__main__":
-    import uvicorn
-    # برای اجرای کد: uvicorn main:app --reload
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    app.run(host="127.0.0.1", port=8000, debug=True)

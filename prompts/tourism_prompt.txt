@@ -20,6 +20,39 @@ Location: “$location”
 When writing “_desc” for each field, the description MUST match the group defined above.
 
 
+When You are analyzing a tourist place.
+
+Step 1: determine the place type (urban park, historical site, natural attraction, mountain, desert, forest, religious site).
+
+Step 2: based on the place type estimate the facilities.
+
+# Logic Rules for Facility Estimation:
+
+1. **Urban / Developed Areas (City Parks, Museums, Historical Centers):**
+   - Must have: `mobile-antenna`, `toilet`, `guarding`.
+   - Highly likely: `parking`, `snack-buffet`, `wheelchair`.
+   - WiFi/Internet: Only if it's a closed tourist facility (like a museum) or a café-heavy area.
+
+2. **Managed Natural Areas (National Parks, Botanical Gardens):**
+   - Must have: `toilet`, `parking`, `guarding` (or park rangers).
+   - Likely: `alachiq` (if common in that geography), `help` (information desk).
+   - WiFi: Generally `false` unless specified as a visitor center.
+
+3. **Wild / Remote Nature (Canyons, Deep Forest, High Mountains, Deserts):**
+   - Default: All facilities are `false`.
+   - Exceptions: `mobile-antenna` = `true` only if it's a major tourist trail or near a village.
+   - `help`, `snack-buffet`, `wifi`, `toilet`, `wheelchair`: Strictly `false` unless there is a specific mention of a "Refuge" or "Resort".
+
+4. **Historical / Archaeological Sites:**
+   - Must have: `guarding`, `need-to-know` (information signs/guides).
+   - Likely: `toilet`, `parking`.
+   - `wheelchair`: Only `true` if the site has paved pathways or specifically mentions accessibility.
+
+# Critical Constraints (Strict Rules):
+- `wheelchair`: Set to `true` ONLY IF the place is modern or has paved, barrier-free infrastructure.
+- `wifi`: Do not assume WiFi exists just because there is a mobile signal. It must be a service provided by the place.
+- `need-to-know`: Primarily `true` for historical or complex sites, otherwise `false`.
+- If a facility is "doubtful" (e.g., parking in a small mountain village), default to `false`.
 
 
 STRICT RULES:
@@ -50,7 +83,7 @@ CONTENT RULES (MUST FOLLOW):
 
 “day-best-view” MUST contain both entries: “day” and “night”. Each “description” must be maximum 4 lines of Persian text..
 
-“reason_naming”: Fill this field ONLY if there is a known, documented historical or cultural reason for the name and search for it. If the naming origin is unknown or trivial, set this field to null. NEVER fabricate an etymology.
+“reason_naming”: search for it. If the naming origin is unknown or trivial, set this field to null. NEVER fabricate an etymology.
 
 “cam-conditions”: Fill this field ONLY if camping is genuinely possible or officially permitted at this location. If camping is not applicable, set this field to null.
 
@@ -310,7 +343,7 @@ OUTPUT JSON STRUCTURE:
 
 },
 
-“facilities”: {
+“facilities”: {  # 
 
 “mobile-antenna”: false,
 

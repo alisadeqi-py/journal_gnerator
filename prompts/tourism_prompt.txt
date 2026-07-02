@@ -83,7 +83,7 @@ CONTENT RULES (MUST FOLLOW):
 
 “day-best-view” MUST contain both entries: “day” and “night”. Each “description” must be maximum 4 lines of Persian text..
 
-“reason_naming”: search for it. If the naming origin is unknown or trivial, set this field to null. NEVER fabricate an etymology.
+“reason_naming”: search for it. If the naming origin is unknown or trivial, set this field to null.
 
 “cam-conditions”: Fill this field ONLY if camping is genuinely possible or officially permitted at this location. If camping is not applicable, set this field to null.
 
@@ -100,6 +100,14 @@ CONTENT RULES (MUST FOLLOW):
 “difficulty_road”: This field MUST contain at least two full Persian paragraphs wrapped in <p> tags, describing road conditions, terrain challenges, seasonal difficulties, and any warnings for travelers.
 
 “parking_space”: This field describes parking OPTIONS IN THE SURROUNDING AREA of the place (nearby streets, public lots, etc.), NOT a parking lot inside the attraction itself. Write at least one full Persian paragraph wrapped in <p> tags.
+
+“location_way”: Write this field as 3 TO 4 connected, flowing Persian paragraphs — like a travel writer narrating a journey to a friend. Do NOT write separate isolated sentences, do NOT use lists, bullet points, numbered steps, or section headers. Every sentence must flow into the next using natural Persian transitions (مثلاً: «از آنجا که...»، «در ادامه مسیر...»، «پس از گذر از...»، «همین که وارد...»، «چند کیلومتر جلوتر...»). Cover ALL of the following and expand on each with rich detail:
+  - LOCATION: Province, county, city, exact neighborhood or road, nearby landmarks and reference points. If it is on a named road or between two towns, say so clearly and paint a picture of where exactly it sits.
+  - HOW TO GET THERE BY PRIVATE CAR: Describe the route in detail — which highways, which exits, which towns you pass through, approximate distances and travel times from the nearest major city and from farther cities. Describe what the road looks like: mountain passes, forest roads, river crossings, the condition of the asphalt, any tricky turns or junctions to watch for.
+  - HOW TO GET THERE BY PUBLIC TRANSPORT: Bus terminals, shared taxis (savari), minibuses, any relevant metro or train connection. Name the specific terminal or station, the fare range if known, and what to do for the last stretch if public transport does not go all the way.
+  - THE JOURNEY ITSELF: What the traveler sees and feels along the way — forests, rice fields, villages, rivers, mountain peaks, the smell of the air, the change in landscape as they get closer. Make the journey sound like part of the adventure.
+  - BEST TIME & PERSONAL RECOMMENDATION: Why this place deserves the trip, what time of day to set off to get the most out of it, and any practical tip for the road (fuel up before this point, road may be narrow, etc.).
+  STYLE: Rich, immersive, warm. Minimum 3 full <p> paragraphs. The reader should feel the road under their feet before they even leave home. All text in Persian.
 
 “posts_faq”: Must contain at least 5 relevant questions and answers about this specific place.
 
@@ -219,9 +227,9 @@ OUTPUT JSON STRUCTURE:
 
 “suitable-family”: false "برای موقعیت ها بررسی کن و بگو برای هر گروه مناسب هست یا نه مثلا اگر برای خانواده خطرناک بود با محیط خنوادگی نبود false بزار ",
 
-“suitable-baby”: false, " اگر محیط برای خانواده ها خطر ناک بود false بزار  "
+“suitable-baby”: false, " اگر محیط برای کودکان ها خطر ناک بود false بزار  دلیلش هم بگو "
 
-“suitable-baby_desc”: null, 
+“suitable-baby_desc”: null,  " چرا برای کودکان خطرناک است ؟ "
 
 “suitable-ms”: false, " اگر برای خانوم ها خطر ناک بود یا از نظر فرهنگی مناسب نبود false بزار  " 
 
@@ -247,23 +255,7 @@ OUTPUT JSON STRUCTURE:
 
 },
 
-“access_routes”: [
-
-{
-
-“from”: “شهر مبدا”,
-
-“by_car”: "فاصله زمانی با ماشین”,
-
-“by_train”: "فاصله زمانی با قطار”,
-
-“by_bus”: "فاصله زمانی با اتوبوس”,
-
-“by_airplan”: "فاصله زمانی با هواپیما”
-
-}
-
-],
+“access_routes”: $access_routes_template,
 
 “important_places”: [
 
@@ -281,9 +273,9 @@ OUTPUT JSON STRUCTURE:
 
 “time-reading”: 5,
 
-“post_adress”: “آدرس کامل به فارسی”,
+“post_adress”: “ اسم کشور نیازی نیست و با اسم استان باید شروع بشه آدرس کامل به فارسی که حتما با | از هم جدا شده باشند”,
 
-“location_way”: “<p>راه دسترسی به فارسی</p>”,
+“location_way”: “<p>پاراگراف اول: به شکل داستانی و گرم توضیح بده مکان دقیقاً کجاست — خیابان، بلوار، محله، تقاطع‌ها و نشانه‌های اطراف را طبیعی و روان در متن بگنجان، نه به صورت لیست.</p><p>پاراگراف دوم: مثل یک راهنمای سفر، مسیر رسیدن از نقاط مختلف شهر را روایت کن — از بزرگراه، خیابان‌های اصلی، مترو، اتوبوس یا تاکسی — با فاصله زمانی منطقه به منطقه که در دل جملات جاری باشد.</p><p>پاراگراف سوم: از فضای اطراف و جذابیت‌های مسیر بنویس — محله چه حسی دارد، در راه چه می‌بینی، چه مکان‌های دیدنی‌ای در نزدیکی هستند که سفر را لذیذتر می‌کنند.</p><p>پاراگراف چهارم: مثل یک توصیه صمیمانه بگو چرا ارزش دارد به این مکان بروند و بهترین زمان مراجعه کِی است.</p>”,
 
 “essential_tips”: “<p>نکته ۱: … نکته ۲: … نکته ۳: …</p>”,
 

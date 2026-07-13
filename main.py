@@ -13,7 +13,8 @@ from services.wordpress_service import send_to_wordpress
 
 app = Flask(__name__)
 CORS(app)
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB
+app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 50 MB
+Image.MAX_IMAGE_PIXELS = None
 asgi_app = WsgiToAsgi(app)
 
 API_TOKEN = os.getenv("API_TOKEN", "GAPGPT_SECRET_TOKEN_2026_ALI")
@@ -129,11 +130,14 @@ def resize_image():
     try:
         image_file = request.files["image"]
         filename = image_file.filename
+        print(f"[resize] received file: {filename}, mimetype: {image_file.mimetype}")
 
         width = request.form.get("width")
         height = request.form.get("height")
+        print(f"[resize] requested dimensions: width={width}, height={height}")
 
         if not width or not height:
+            print("[resize] missing width or height — rejecting")
             return jsonify({
                 "status": "error",
                 "message": "width and height are required"
@@ -142,16 +146,23 @@ def resize_image():
         width = int(width)
         height = int(height)
 
-        image = Image.open(image_file)
-        resized = image.resize((width, height))
+        with Image.open(io.BytesIO(image_file.read())) as image:
+            image.load()
+            print(f"[resize] original size: {image.size}, mode: {image.mode}")
 
-        img_io = io.BytesIO()
+            resized = image.resize((width, height))
 
-        if resized.mode in ("RGBA", "P"):
-            resized = resized.convert("RGB")
+            if resized.mode in ("RGBA", "P"):
+                print(f"[resize] converting mode {resized.mode} -> RGB")
+                resized = resized.convert("RGB")
 
-        resized.save(img_io, format="JPEG", quality=90)
+            img_io = io.BytesIO()
+            resized.save(img_io, format="JPEG", quality=90)
+            resized.close()
+
+        size_kb = img_io.tell() / 1024
         img_io.seek(0)
+        print(f"[resize] done — output size: {size_kb:.1f} KB, sending as {filename}")
 
         return send_file(
             img_io,
@@ -161,6 +172,7 @@ def resize_image():
         )
 
     except Exception as e:
+        print(f"[resize] error: {e}")
         return jsonify({
             "status": "error",
             "message": str(e)

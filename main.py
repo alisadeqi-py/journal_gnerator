@@ -179,6 +179,91 @@ def resize_image():
         }), 500
 
 
+@app.route("/compress-image", methods=["POST", "OPTIONS"])
+def compress_image():
+    if not check_auth(request):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+    if "image" not in request.files:
+        return jsonify({"status": "error", "message": "No image uploaded"}), 400
+
+    try:
+        image_file = request.files["image"]
+        filename = image_file.filename
+        image_bytes = image_file.read()
+        original_size = len(image_bytes)
+
+        print(f"[compress] ── INPUT ──────────────────────────")
+        print(f"[compress]   filename : {filename}")
+        print(f"[compress]   mimetype : {image_file.mimetype}")
+        print(f"[compress]   size     : {original_size / 1024 / 1024:.2f} MB ({original_size:,} bytes)")
+
+        limit = 5 * 1024 * 1024  # 5 MB
+
+        if original_size <= limit:
+            print(f"[compress] ── OUTPUT ─────────────────────────")
+            print(f"[compress]   already under 5 MB — returning as-is")
+            print(f"[compress]   size     : {original_size / 1024 / 1024:.2f} MB")
+            print(f"[compress] ──────────────────────────────────")
+            return send_file(
+                io.BytesIO(image_bytes),
+                mimetype=image_file.mimetype or "image/jpeg",
+                as_attachment=True,
+                download_name=filename
+            )
+
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            image.load()
+            print(f"[compress]   dimensions: {image.size[0]}x{image.size[1]} px")
+            print(f"[compress]   mode     : {image.mode}")
+
+            if image.mode in ("RGBA", "P"):
+                print(f"[compress]   converting {image.mode} → RGB")
+                image = image.convert("RGB")
+
+            print(f"[compress] ── COMPRESSING ───────────────────")
+            best_buf = None
+            best_quality = None
+            for quality in range(95, 9, -5):
+                buf = io.BytesIO()
+                image.save(buf, format="JPEG", quality=quality, optimize=True)
+                size = buf.tell()
+                print(f"[compress]   quality={quality:>3} → {size / 1024 / 1024:.2f} MB ({size:,} bytes)")
+                if size <= limit:
+                    best_buf = buf
+                    best_quality = quality
+                    break
+
+            if best_buf is None:
+                buf = io.BytesIO()
+                image.save(buf, format="JPEG", quality=10, optimize=True)
+                best_buf = buf
+                best_quality = 10
+                print(f"[compress]   could not reach 5 MB even at quality=10 — returning best effort")
+
+        best_buf.seek(0)
+        final_size = best_buf.getbuffer().nbytes
+        reduction = (1 - final_size / original_size) * 100
+
+        print(f"[compress] ── OUTPUT ─────────────────────────")
+        print(f"[compress]   filename : {filename}")
+        print(f"[compress]   quality  : {best_quality}")
+        print(f"[compress]   size     : {final_size / 1024 / 1024:.2f} MB ({final_size:,} bytes)")
+        print(f"[compress]   reduced  : {reduction:.1f}%")
+        print(f"[compress] ──────────────────────────────────")
+
+        return send_file(
+            best_buf,
+            mimetype="image/jpeg",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        print(f"[compress] error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route("/analyze", methods=["POST", "OPTIONS"])
 def analyze():
     if not check_auth(request):

@@ -200,18 +200,6 @@ def compress_image():
 
         limit = 5 * 1024 * 1024  # 5 MB
 
-        if original_size <= limit:
-            print(f"[compress] ── OUTPUT ─────────────────────────")
-            print(f"[compress]   already under 5 MB — returning as-is")
-            print(f"[compress]   size     : {original_size / 1024 / 1024:.2f} MB")
-            print(f"[compress] ──────────────────────────────────")
-            return send_file(
-                io.BytesIO(image_bytes),
-                mimetype=image_file.mimetype or "image/jpeg",
-                as_attachment=True,
-                download_name=filename
-            )
-
         with Image.open(io.BytesIO(image_bytes)) as image:
             image.load()
             print(f"[compress]   dimensions: {image.size[0]}x{image.size[1]} px")

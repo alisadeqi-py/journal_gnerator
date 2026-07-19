@@ -198,7 +198,15 @@ def compress_image():
         print(f"[compress]   mimetype : {image_file.mimetype}")
         print(f"[compress]   size     : {original_size / 1024 / 1024:.2f} MB ({original_size:,} bytes)")
 
-        limit = 5 * 1024 * 1024  # 5 MB
+        limit = 100 * 1024  # 100 KB
+
+        width = request.form.get("width")
+        height = request.form.get("height")
+        if width:
+            width = int(width)
+        if height:
+            height = int(height)
+        print(f"[compress]   resize   : {width}x{height} px" if width and height else "[compress]   resize   : none")
 
         with Image.open(io.BytesIO(image_bytes)) as image:
             image.load()
@@ -209,6 +217,10 @@ def compress_image():
                 print(f"[compress]   converting {image.mode} → RGB")
                 image = image.convert("RGB")
 
+            if width and height:
+                image = image.resize((width, height), Image.LANCZOS)
+                print(f"[compress]   resized to: {image.size[0]}x{image.size[1]} px")
+
             print(f"[compress] ── COMPRESSING ───────────────────")
             best_buf = None
             best_quality = None
@@ -216,7 +228,7 @@ def compress_image():
                 buf = io.BytesIO()
                 image.save(buf, format="JPEG", quality=quality, optimize=True)
                 size = buf.tell()
-                print(f"[compress]   quality={quality:>3} → {size / 1024 / 1024:.2f} MB ({size:,} bytes)")
+                print(f"[compress]   quality={quality:>3} → {size / 1024:.1f} KB ({size:,} bytes)")
                 if size <= limit:
                     best_buf = buf
                     best_quality = quality
@@ -227,7 +239,7 @@ def compress_image():
                 image.save(buf, format="JPEG", quality=10, optimize=True)
                 best_buf = buf
                 best_quality = 10
-                print(f"[compress]   could not reach 5 MB even at quality=10 — returning best effort")
+                print(f"[compress]   could not reach 100 KB even at quality=10 — returning best effort")
 
         best_buf.seek(0)
         final_size = best_buf.getbuffer().nbytes
@@ -236,7 +248,7 @@ def compress_image():
         print(f"[compress] ── OUTPUT ─────────────────────────")
         print(f"[compress]   filename : {filename}")
         print(f"[compress]   quality  : {best_quality}")
-        print(f"[compress]   size     : {final_size / 1024 / 1024:.2f} MB ({final_size:,} bytes)")
+        print(f"[compress]   size     : {final_size / 1024:.1f} KB ({final_size:,} bytes)")
         print(f"[compress]   reduced  : {reduction:.1f}%")
         print(f"[compress] ──────────────────────────────────")
 
